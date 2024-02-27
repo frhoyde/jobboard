@@ -2,18 +2,55 @@ import inquirer from "inquirer";
 import { Command } from "commander";
 import pkg from "cli-table3";
 const Table = pkg;
+import fetch from "node-fetch";
 
-const jobs = [
-	{
-		Position: "Software Engineer",
-		Company: "ABC Inc",
-		Location: "San Francisco",
-		PostingDate: "2024-02-27",
-		URL: "https://example.com",
-		Source: "LinkedIn",
-	},
-	// Add more job objects here
-];
+const jobs = [];
+
+const apiUrl =
+	"https://www.reed.co.uk/api/1.0/search";
+
+const apiKey =
+	"b7657778-9b23-4944-99d0-486945169183";
+const auth =
+	"Basic " +
+	Buffer.from(apiKey + ":" + "", "utf8").toString(
+		"base64"
+	);
+
+const fetchAndFormat = async () => {
+	try {
+		const response = await fetch(apiUrl, {
+			method: "GET",
+			headers: {
+				Authorization: auth,
+			},
+		});
+		if (!response.ok) {
+			throw new Error(
+				`HTTP error! status: ${response.status}`
+			);
+		}
+		const data = await response.json();
+
+		data.results.forEach((job) => {
+			const formattedJob = {
+				Position: job.jobTitle,
+				Company: job.employerName,
+				Location: job.locationName,
+				PostingDate: job.date,
+				URL: job.jobUrl,
+				Source: "Reed",
+			};
+
+			jobs.push(formattedJob);
+		});
+	} catch (error) {
+		console.error("Error fetching data:", error);
+	}
+};
+
+// Call the function
+fetchAndFormat();
 
 const program = new Command();
 program
@@ -122,6 +159,23 @@ function displayJobsTable(jobs) {
 			"URL",
 			"Source",
 		],
+		chars: {
+			top: "═",
+			"top-mid": "╤",
+			"top-left": "╔",
+			"top-right": "╗",
+			bottom: "═",
+			"bottom-mid": "╧",
+			"bottom-left": "╚",
+			"bottom-right": "╝",
+			left: "║",
+			"left-mid": "╟",
+			mid: "─",
+			"mid-mid": "┼",
+			right: "║",
+			"right-mid": "╢",
+			middle: "│",
+		},
 	});
 
 	jobs.forEach((job, index) => {
