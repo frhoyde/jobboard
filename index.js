@@ -3,14 +3,15 @@ import { Command } from "commander";
 import pkg from "cli-table3";
 const Table = pkg;
 import fetch from "node-fetch";
+import { config } from "dotenv";
 
+const result = config();
 const jobs = [];
 
 const apiUrl =
 	"https://www.reed.co.uk/api/1.0/search";
 
-const apiKey =
-	"b7657778-9b23-4944-99d0-486945169183";
+const apiKey = process.env.REED_API_KEY;
 const auth =
 	"Basic " +
 	Buffer.from(apiKey + ":" + "", "utf8").toString(
