@@ -7,10 +7,11 @@ import { config } from "dotenv";
 import axios from "axios";
 
 const result = config();
-const jobs = [];
+let jobs = [];
 
 const fetchAndFormat = async (options) => {
 	try {
+		jobs = [];
 		const jobicyOptions = {
 			method: "GET",
 			url: "https://jobicy.p.rapidapi.com/api/v2/remote-jobs",
@@ -39,35 +40,35 @@ const fetchAndFormat = async (options) => {
 			jobs.push(formattedJob);
 		});
 
-		const remooteOptions = {
-			method: "GET",
-			url: "https://remoote-job-search1.p.rapidapi.com/remoote/jobs",
-			headers: {
-				"X-RapidAPI-Key":
-					process.env.RAPID_API_KEY,
-				"X-RapidAPI-Host":
-					"remoote-job-search1.p.rapidapi.com",
-			},
-		};
+		// const remooteOptions = {
+		// 	method: "GET",
+		// 	url: "https://remoote-job-search1.p.rapidapi.com/remoote/jobs",
+		// 	headers: {
+		// 		"X-RapidAPI-Key":
+		// 			process.env.RAPID_API_KEY,
+		// 		"X-RapidAPI-Host":
+		// 			"remoote-job-search1.p.rapidapi.com",
+		// 	},
+		// };
 
-		const response2 = await axios.request(
-			remooteOptions
-		);
+		// const response2 = await axios.request(
+		// 	remooteOptions
+		// );
 
-		const data2 = response2.data;
+		// const data2 = response2.data;
 
-		data2.jobs.forEach((job) => {
-			const formattedJob = {
-				Position: job.title,
-				Company: job.company,
-				Location: job.geo_raw,
-				PostingDate: job.createdAt,
-				URL: job.url,
-				Source: "Remoote",
-			};
+		// data2.jobs.forEach((job) => {
+		// 	const formattedJob = {
+		// 		Position: job.title,
+		// 		Company: job.company,
+		// 		Location: job.geo_raw,
+		// 		PostingDate: job.createdAt,
+		// 		URL: job.url,
+		// 		Source: "Remoote",
+		// 	};
 
-			jobs.push(formattedJob);
-		});
+		// 	jobs.push(formattedJob);
+		// });
 
 		if (options.role && options.location) {
 			const linkedInOptions = {
@@ -189,7 +190,7 @@ program
 			);
 		});
 
-		fetchAndFormat(options);
+		await fetchAndFormat(options);
 		displayJobsTable(filteredJobs);
 	});
 
@@ -212,8 +213,10 @@ program
 
 function displayJobsTable(jobs) {
 	const table = new Table({
-		colWidths: [4, 20, 20, 20, 20, 50, 20],
+		colWidths: [4, 20, 15, 20, 20, 50, 20],
 		wordWrap: true,
+		wrapWord: true,
+		wrapOnWordBoundary: false,
 		head: [
 			"Number",
 			"Position",
