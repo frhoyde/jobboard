@@ -4,43 +4,34 @@ import pkg from "cli-table3";
 const Table = pkg;
 import fetch from "node-fetch";
 import { config } from "dotenv";
+import axios from "axios";
 
 const result = config();
 const jobs = [];
 
-const apiUrl =
-	"https://www.reed.co.uk/api/1.0/search";
-
-const apiKey = process.env.REED_API_KEY;
-const auth =
-	"Basic " +
-	Buffer.from(apiKey + ":" + "", "utf8").toString(
-		"base64"
-	);
-
 const fetchAndFormat = async () => {
 	try {
-		const response = await fetch(apiUrl, {
+		const options = {
 			method: "GET",
+			url: "https://jobicy.p.rapidapi.com/api/v2/remote-jobs",
 			headers: {
-				Authorization: auth,
+				"X-RapidAPI-Key":
+					process.env.RAPID_API_KEY,
+				"X-RapidAPI-Host":
+					"jobicy.p.rapidapi.com",
 			},
-		});
-		if (!response.ok) {
-			throw new Error(
-				`HTTP error! status: ${response.status}`
-			);
-		}
-		const data = await response.json();
+		};
+		const response = await axios.request(options);
+		const data = response.data.jobs;
 
-		data.results.forEach((job) => {
+		data.forEach((job) => {
 			const formattedJob = {
 				Position: job.jobTitle,
-				Company: job.employerName,
-				Location: job.locationName,
-				PostingDate: job.date,
-				URL: job.jobUrl,
-				Source: "Reed",
+				Company: job.companyName,
+				Location: job.jobGeo,
+				PostingDate: job.pubDate,
+				URL: job.url,
+				Source: "Jobicy",
 			};
 
 			jobs.push(formattedJob);
