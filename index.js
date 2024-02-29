@@ -9,9 +9,9 @@ import axios from "axios";
 const result = config();
 const jobs = [];
 
-const fetchAndFormat = async () => {
+const fetchAndFormat = async (options) => {
 	try {
-		const options = {
+		const jobicyOptions = {
 			method: "GET",
 			url: "https://jobicy.p.rapidapi.com/api/v2/remote-jobs",
 			headers: {
@@ -21,7 +21,9 @@ const fetchAndFormat = async () => {
 					"jobicy.p.rapidapi.com",
 			},
 		};
-		const response = await axios.request(options);
+		const response = await axios.request(
+			jobicyOptions
+		);
 		const data = response.data.jobs;
 
 		data.forEach((job) => {
@@ -36,13 +38,80 @@ const fetchAndFormat = async () => {
 
 			jobs.push(formattedJob);
 		});
+
+		const remooteOptions = {
+			method: "GET",
+			url: "https://remoote-job-search1.p.rapidapi.com/remoote/jobs",
+			headers: {
+				"X-RapidAPI-Key":
+					process.env.RAPID_API_KEY,
+				"X-RapidAPI-Host":
+					"remoote-job-search1.p.rapidapi.com",
+			},
+		};
+
+		const response2 = await axios.request(
+			remooteOptions
+		);
+
+		const data2 = response2.data;
+
+		data2.jobs.forEach((job) => {
+			const formattedJob = {
+				Position: job.title,
+				Company: job.company,
+				Location: job.geo_raw,
+				PostingDate: job.createdAt,
+				URL: job.url,
+				Source: "Remoote",
+			};
+
+			jobs.push(formattedJob);
+		});
+
+		if (options.role && options.location) {
+			const linkedInOptions = {
+				method: "POST",
+				url: "https://linkedin-jobs-scraper-api.p.rapidapi.com/jobs",
+				headers: {
+					"content-type": "application/json",
+					"X-RapidAPI-Key":
+						process.env.RAPID_API_KEY,
+					"X-RapidAPI-Host":
+						"linkedin-jobs-scraper-api.p.rapidapi.com",
+				},
+				data: {
+					title: options.role,
+					location: options.location,
+					rows: 100,
+				},
+			};
+
+			const response3 = await axios.request(
+				linkedInOptions
+			);
+
+			const data3 = response3.data;
+
+			data3.forEach((job) => {
+				const formattedJob = {
+					Position: job.title,
+					Company: job.companyName,
+					Location: job.location,
+					PostingDate: job.publishedAt,
+					URL: job.jobUrl,
+					Source: "LinkedIn",
+				};
+
+				jobs.push(formattedJob);
+			});
+		}
 	} catch (error) {
 		console.error("Error fetching data:", error);
 	}
 };
 
-// Call the function
-fetchAndFormat();
+await fetchAndFormat({});
 
 const program = new Command();
 program
@@ -120,6 +189,7 @@ program
 			);
 		});
 
+		fetchAndFormat(options);
 		displayJobsTable(filteredJobs);
 	});
 
@@ -142,6 +212,8 @@ program
 
 function displayJobsTable(jobs) {
 	const table = new Table({
+		colWidths: [4, 20, 20, 20, 20, 50, 20],
+		wordWrap: true,
 		head: [
 			"Number",
 			"Position",
@@ -151,23 +223,6 @@ function displayJobsTable(jobs) {
 			"URL",
 			"Source",
 		],
-		chars: {
-			top: "═",
-			"top-mid": "╤",
-			"top-left": "╔",
-			"top-right": "╗",
-			bottom: "═",
-			"bottom-mid": "╧",
-			"bottom-left": "╚",
-			"bottom-right": "╝",
-			left: "║",
-			"left-mid": "╟",
-			mid: "─",
-			"mid-mid": "┼",
-			right: "║",
-			"right-mid": "╢",
-			middle: "│",
-		},
 	});
 
 	jobs.forEach((job, index) => {
