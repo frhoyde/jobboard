@@ -2,10 +2,9 @@ import inquirer from "inquirer";
 import { Command } from "commander";
 import pkg from "cli-table3";
 const Table = pkg;
-import fetch from "node-fetch";
 import { config } from "dotenv";
 import axios from "axios";
-
+import fs from "fs";
 const result = config();
 let jobs = [];
 
@@ -45,7 +44,7 @@ const fetchAndFormat = async (options) => {
 			url: "https://remoote-job-search1.p.rapidapi.com/remoote/jobs",
 			headers: {
 				"X-RapidAPI-Key":
-					process.env.RAPID_API_KEY,
+					"63b72fa588msha79d18f6d5a0d30p142c9bjsn40999c6022da",
 				"X-RapidAPI-Host":
 					"remoote-job-search1.p.rapidapi.com",
 			},
@@ -65,6 +64,34 @@ const fetchAndFormat = async (options) => {
 				PostingDate: job.createdAt,
 				URL: job.url,
 				Source: "Remoote",
+			};
+
+			jobs.push(formattedJob);
+		});
+
+		const reedOptions = {
+			method: "GET",
+			url: "https://www.reed.co.uk/api/1.0/search",
+			auth: {
+				username: process.env.REED_API_KEY,
+				password: "",
+			},
+		};
+
+		const response4 = await axios.request(
+			reedOptions
+		);
+
+		const data4 = response4.data;
+
+		data4.results.forEach((job) => {
+			const formattedJob = {
+				Position: job.jobTitle,
+				Company: job.employerName,
+				Location: job.locationName,
+				PostingDate: job.date,
+				URL: job.jobUrl,
+				Source: "Reed",
 			};
 
 			jobs.push(formattedJob);
@@ -109,6 +136,28 @@ const fetchAndFormat = async (options) => {
 		}
 	} catch (error) {
 		console.error("Error fetching data:", error);
+	}
+};
+
+const savedJobsFile = "jobBoardSaves.json";
+
+const saveJobsToFile = (jobs) => {
+	fs.writeFileSync(
+		savedJobsFile,
+		JSON.stringify(jobs, null, 2),
+		"utf8"
+	);
+};
+
+const loadSavedJobs = () => {
+	try {
+		const data = fs.readFileSync(
+			savedJobsFile,
+			"utf8"
+		);
+		return JSON.parse(data);
+	} catch (error) {
+		return [];
 	}
 };
 
@@ -199,21 +248,33 @@ program
 	.description("Save a job")
 	.option("--jobid <id>", "Job ID")
 	.action((options) => {
-		// Implement saving logic based on options.jobid
-		console.log(`Job ${options.jobid} saved!`);
+		const jobToSave = jobs[options.jobid - 1];
+
+		if (jobToSave) {
+			const savedJobs = loadSavedJobs();
+			savedJobs.push(jobToSave);
+			saveJobsToFile(savedJobs);
+			console.log(`Job saved!`);
+			displayJobsTable([jobToSave]);
+		} else {
+			console.log(
+				`Job with ID ${options.jobid} not found.`
+			);
+		}
 	});
 
 program
 	.command("view-saved")
 	.description("View saved jobs")
 	.action(() => {
-		// Implement logic to display saved jobs
+		const savedJobs = loadSavedJobs();
+		displayJobsTable(savedJobs);
 		console.log("Viewing saved jobs...");
 	});
 
 function displayJobsTable(jobs) {
 	const table = new Table({
-		colWidths: [4, 20, 15, 20, 20, 50, 20],
+		colWidths: [8, 20, 15, 20, 20, 50, 20],
 		wordWrap: true,
 		wrapWord: true,
 		wrapOnWordBoundary: false,
