@@ -44,7 +44,7 @@ const fetchAndFormat = async (options) => {
 			url: "https://remoote-job-search1.p.rapidapi.com/remoote/jobs",
 			headers: {
 				"X-RapidAPI-Key":
-					"63b72fa588msha79d18f6d5a0d30p142c9bjsn40999c6022da",
+					process.env.RAPID_API_KEY,
 				"X-RapidAPI-Host":
 					"remoote-job-search1.p.rapidapi.com",
 			},
@@ -140,6 +140,7 @@ const fetchAndFormat = async (options) => {
 };
 
 const savedJobsFile = "jobBoardSaves.json";
+const searchCacheFile = "searchCache.json";
 
 const saveJobsToFile = (jobs) => {
 	fs.writeFileSync(
@@ -161,7 +162,25 @@ const loadSavedJobs = () => {
 	}
 };
 
-await fetchAndFormat({});
+const loadSearchCache = () => {
+	try {
+		const data = fs.readFileSync(
+			searchCacheFile,
+			"utf8"
+		);
+		return JSON.parse(data);
+	} catch (error) {
+		return [];
+	}
+};
+
+const saveSearchCache = (results) => {
+	fs.writeFileSync(
+		searchCacheFile,
+		JSON.stringify(results, null, 2),
+		"utf8"
+	);
+};
 
 const program = new Command();
 program
@@ -177,6 +196,7 @@ program
 	.option("--type <jobType>", "Job Type")
 	.option("--company <name>", "Company")
 	.action(async (options) => {
+		await fetchAndFormat({});
 		const answers = await inquirer.prompt([
 			{
 				type: "input",
@@ -241,6 +261,7 @@ program
 
 		await fetchAndFormat(options);
 		displayJobsTable(filteredJobs);
+		saveSearchCache(filteredJobs);
 	});
 
 program
@@ -248,7 +269,10 @@ program
 	.description("Save a job")
 	.option("--jobid <id>", "Job ID")
 	.action((options) => {
-		const jobToSave = jobs[options.jobid - 1];
+		const searchCache = loadSearchCache();
+
+		const jobToSave =
+			searchCache[options.jobid - 1];
 
 		if (jobToSave) {
 			const savedJobs = loadSavedJobs();
@@ -270,6 +294,15 @@ program
 		const savedJobs = loadSavedJobs();
 		displayJobsTable(savedJobs);
 		console.log("Viewing saved jobs...");
+	});
+
+program
+	.command("load-cache")
+	.description("load cached jobs")
+	.action(() => {
+		const cachedJobs = loadSearchCache();
+		displayJobsTable(cachedJobs);
+		console.log("Viewing cached jobs...");
 	});
 
 function displayJobsTable(jobs) {
