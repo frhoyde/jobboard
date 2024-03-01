@@ -1,8 +1,11 @@
 {
 	"name": "jobboard",
 	"version": "1.0.0",
-	"description": "",
+	"description": "A job board CLI tool",
 	"main": "index.js",
+	"bin": {
+		"jobboard": "index.js"
+	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
