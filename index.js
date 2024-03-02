@@ -98,22 +98,30 @@ program
 				when: !options.company,
 			},
 		]);
+		let jobs = [];
 
-		const response = await axios.get(
-			`${serverURL}/search`,
-			{
-				params: {
-					role: options.role || answers.role,
-					location:
-						options.location || answers.location,
-					site: options.site || answers.site,
-					type: options.type || answers.type,
-					company:
-						options.company || answers.company,
-				},
-			}
-		);
-		const jobs = response.data;
+		try {
+			const response = await axios.get(
+				`${serverURL}/search`,
+				{
+					params: {
+						role: options.role || answers.role,
+						location:
+							options.location ||
+							answers.location,
+						site: options.site || answers.site,
+						type: options.type || answers.type,
+						company:
+							options.company || answers.company,
+					},
+				}
+			);
+			jobs = response.data;
+		} catch (error) {
+			console.error(
+				"Error fetching data: Maybe Your server is not running/connected or you are not connected to the internet"
+			);
+		}
 
 		displayJobsTable(jobs);
 		saveSearchCache(jobs);
